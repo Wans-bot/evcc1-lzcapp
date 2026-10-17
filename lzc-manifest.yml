@@ -25,7 +25,6 @@ application:
         - /*
       do:
         - src: file:///lzcapp/pkg/content/lazycat-injects/evcc-locale-haptic.js
-
     # ── 网盘文件拦截（官方《自动拦截文件选择器》专题）──────────────────────────
     # 1) 同源文件桥接：选择器读写他人共享目录时把 /__lazycat_file_bridge/* 转发到
     #    当前微服的网盘服务 file.<微服域名>。
@@ -84,10 +83,10 @@ application:
         - /*
       do:
         - src: file:///lzcapp/pkg/content/lazycat-injects/evcc-http-download-bridge.js
-
 services:
   evcc:
-    image: registry.lazycat.cloud/wans/evcc/evcc:0a9dee2f641eabaa
+    # upstream: docker.io/evcc/evcc:0.317.2
+    image: registry.lazycat.cloud/wans/evcc/evcc:f4c05d290c9418fa
     # evcc 自身的“管理员密码”是可选的额外保护。镜像默认会引导用户设置密码
     # （/api/auth/status 返回 501 + 弹出设置密码弹窗），与平台要求的免密登录冲突。
     # 平台侧已有账号鉴权（/sys/login），因此按上游 --disable-auth 关闭应用内密码，

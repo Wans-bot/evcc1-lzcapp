@@ -1,18 +1,16 @@
 package: cloud.lazycat.app.evcc1
-version: 0.316.2-1
+version: 0.317.2
 name: evcc
 description: 本地家庭能源管理与电动汽车充电控制器
 author: evcc.io
 license: MIT
 homepage: https://github.com/evcc-io/evcc
 min_os_version: 1.6.0
-
 permissions:
   required:
     - net.internet
     # evcc 通过局域网直连电表/逆变器/储能/充电桩（Modbus、MQTT、HTTP）
     - net.lan
-
 locales:
   zh-CN:
     name: evcc 家庭能源管理
