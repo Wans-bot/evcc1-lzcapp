@@ -1,0 +1,63 @@
+package: cloud.lazycat.app.evcc1
+version: 0.316.2-1
+name: evcc
+description: 本地家庭能源管理与电动汽车充电控制器
+author: evcc.io
+license: MIT
+homepage: https://github.com/evcc-io/evcc
+min_os_version: 1.6.0
+
+permissions:
+  required:
+    - net.internet
+    # evcc 通过局域网直连电表/逆变器/储能/充电桩（Modbus、MQTT、HTTP）
+    - net.lan
+
+locales:
+  zh-CN:
+    name: evcc 家庭能源管理
+    description: 本地运行的光伏与储能管理、电表接入和电动汽车充电控制器，让光伏余电优先给电动车充电。
+    usage: |
+      evcc 是开源的本地家庭能源管理系统与电动汽车充电控制器，整套系统运行在你的微服上，不依赖厂家云服务。
+
+      首次使用：
+      1. 打开应用后无需登录，直接进入配置向导。
+      2. 在「配置」里添加家里已有的设备（可以先加电表/逆变器，再加充电桩）：
+         - 电表 / 光伏逆变器 / 储能电池：支持古瑞瓦特 Growatt、德业 Deye、固德威 GoodWe、艾罗 SolaX、首航 SofarSolar、阳光电源 Sungrow、禾迈 Hoymiles、FoxESS、Sigenergy、Anker、Zendure 等品牌，也支持 Modbus、MQTT、Shelly、Tasmota 等通用接入；
+         - 充电桩：OCPP、Modbus、KEBA、Easee、go-e、Tesla 等；
+         - 车辆：特斯拉、大众、宝马、奔驰等品牌账号，也可以选择「离线车辆」手动记录。
+      3. 填写设备的局域网 IP 与端口，设备需要和微服在同一个局域网内。
+      4. 所有配置与充电记录都保存在本机数据目录，重启和升级都不会丢失。
+
+      日常使用：
+      - 首页实时显示光伏发电、家庭用电、储能与充电功率，并给出光伏发电预测。
+      - 首页可切换充电模式：关闭 / 仅光伏 / 最低+光伏 / 快速充电。
+      - 在「充电记录」里查看每次充电的电量、时长与费用。
+
+      说明：
+      - 部分厂商集成需要 evcc sponsor token（在「设置 → Sponsor Token」里填写），不填不影响其它设备。
+      - 电价货币已默认设为人民币，可在「设置 → 电价」里修改电价。
+      - 本应用使用桥接网络，充电桩通过 OCPP 反向连接微服不可用，建议优先使用 Modbus / MQTT 等主动连接方式。
+      - 界面语言跟随浏览器语言：中文浏览器首次打开即为简体中文，也可以随时在界面内切换语言。
+      - 访问控制由微服账号体系负责，应用内不再单独设置管理员密码，打开即用。
+  en-US:
+    name: evcc
+    description: Local home energy management and EV charge controller for PV, battery, meters and wallboxes.
+    usage: |
+      evcc is an extensible EV charge controller and home energy management system that runs entirely on your box, without vendor cloud services.
+
+      Getting started:
+      1. Open the app — no login required. The configuration wizard starts right away.
+      2. Add your devices under "Configuration" (meters/inverters first, then chargers):
+         - Meters / PV inverters / batteries: Growatt, Deye, GoodWe, SolaX, SofarSolar, Sungrow, Hoymiles, FoxESS, Sigenergy, Anker, Zendure and many more, plus generic Modbus, MQTT, Shelly and Tasmota;
+         - Chargers: OCPP, Modbus, KEBA, Easee, go-e, Tesla and more;
+         - Vehicles: Tesla, VW, BMW, Mercedes and others, or an offline vehicle you update manually.
+      3. Enter the device IP address and port. Devices must be reachable on the same local network as the box.
+      4. All settings and charging sessions are stored in the app data directory and survive restarts and upgrades.
+
+      Notes:
+      - Some vendor integrations require an evcc sponsor token (Settings → Sponsor Token). Everything else works without one.
+      - The default tariff currency is set to CNY; change it under Settings → Tariffs.
+      - The app runs in bridge networking mode, so chargers cannot connect inbound via OCPP. Prefer Modbus/MQTT style active connections.
+      - The UI follows your browser language; Chinese browsers start in Simplified Chinese and the language can be switched in the UI.
+      - Access control is handled by the box account system, so the app opens without a separate admin password.

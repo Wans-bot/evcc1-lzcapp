@@ -1,0 +1,111 @@
+# subdomain 一经发布不可更改：它决定应用的实例标识与数据存储路径。
+application:
+  subdomain: evcc
+  upstreams:
+    - location: /
+      # evcc 的 UI 与 REST/MQTT API 都在 7070 端口
+      backend: http://evcc.cloud.lazycat.app.evcc1.lzcapp:7070
+      disable_trim_location: true
+      # 注意：不要开启 fix_websocket_header。网关的“大小写修正”会额外塞一个
+      # Sec-WebSocket-Key（实测 evcc 报 400 WebSocket protocol violation:
+      # multiple Sec-WebSocket-Key headers），浏览器 ws 一直连不上。
+  health_check:
+    test_url: http://evcc.cloud.lazycat.app.evcc1.lzcapp:7070/
+    start_period: 300s
+    timeout: 10s
+  injects:
+    # 浏览器阶段适配：按浏览器语言选择简体中文界面 + 规避非手势下的 vibrate 控制台报错。
+    # 仅注入脚本，不改上游镜像与源码；细节见 content/lazycat-injects/evcc-locale-haptic.js
+    - id: evcc-zh-locale-and-haptic
+      'on': browser
+      # 注入脚本本身不做鉴权相关动作（只写一个语言偏好键 + vibrate 降级），
+      # 因此不要求请求带平台登录态，否则未登录/免登录访问时脚本会被静默跳过。
+      auth_required: false
+      when:
+        - /*
+      do:
+        - src: file:///lzcapp/pkg/content/lazycat-injects/evcc-locale-haptic.js
+
+    # ── 网盘文件拦截（官方《自动拦截文件选择器》专题）──────────────────────────
+    # 1) 同源文件桥接：选择器读写他人共享目录时把 /__lazycat_file_bridge/* 转发到
+    #    当前微服的网盘服务 file.<微服域名>。
+    - id: lazycat-file-bridge
+      'on': request
+      auth_required: false
+      when:
+        - /__lazycat_file_bridge/*
+      do:
+        - src: |
+            const bridgePrefix = "/__lazycat_file_bridge";
+            const requestHost = String(ctx.request.host || "").split(":")[0].toLowerCase();
+            const firstDot = requestHost.indexOf(".");
+            const method = String(ctx.request.method || "").toUpperCase();
+            if (firstDot <= 0 || !requestHost.endsWith(".heiyu.space") ||
+                !["GET", "HEAD", "PUT"].includes(method)) {
+              ctx.response.send(["GET", "HEAD", "PUT"].includes(method) ? 400 : 405,
+                "Invalid LazyCat file bridge request");
+              return;
+            }
+            const boxDomain = requestHost.slice(firstDot + 1);
+            ctx.headers.del("Origin");
+            ctx.headers.del("Referer");
+            ctx.proxy.to("https://file." + boxDomain, {
+              path: "/files/home" + ctx.request.path.slice(bridgePrefix.length),
+              query: ctx.request.raw_query,
+              use_target_host: true,
+              timeout_ms: 120000,
+              on_fail: "error",
+            });
+    # 2) 统一「打开 / 保存」窗口：接管 input[type=file]、showOpen/SaveFilePicker 与
+    #    带 download 的 blob:/data: 锚点。
+    - id: open-save-chooser
+      'on': browser
+      auth_required: false
+      when:
+        - /*
+      do:
+        - src: >-
+            file:///lzcapp/pkg/content/lazycat-injects/lzc-file-chooser-inject.js
+          params:
+            diskRoot: /_lzc/files/home
+            fileBridgeRoot: /__lazycat_file_bridge
+            fallbackMime: application/octet-stream
+            locale: auto
+            hooks:
+              fileSystemAccess: true
+              fileInput: true
+              downloadAnchor: true
+    # 3) 补接「同源普通 HTTP 下载」：官方钩子只认 blob:/data: 锚点，应用里直接指向
+    #    自身后端的下载（导出 CSV / 下载日志等）不补接就会走浏览器原生下载、不进网盘。
+    - id: evcc_http_download_bridge
+      'on': browser
+      auth_required: false
+      when:
+        - /*
+      do:
+        - src: file:///lzcapp/pkg/content/lazycat-injects/evcc-http-download-bridge.js
+
+services:
+  evcc:
+    image: registry.lazycat.cloud/wans/evcc/evcc:0a9dee2f641eabaa
+    # evcc 自身的“管理员密码”是可选的额外保护。镜像默认会引导用户设置密码
+    # （/api/auth/status 返回 501 + 弹出设置密码弹窗），与平台要求的免密登录冲突。
+    # 平台侧已有账号鉴权（/sys/login），因此按上游 --disable-auth 关闭应用内密码，
+    # 打开即用、无弹窗；上游 entrypoint 会把该参数透传给 evcc。
+    command: "evcc --disable-auth"
+    environment:
+      - TZ=Asia/Shanghai
+      # 配置与充电记录（SQLite）持久化到 /lzcapp/var/data
+      - HOME=/data
+      - EVCC_DATABASE_DSN=/data/evcc.db
+      # 电价默认人民币；遥测默认关闭，不上报任何使用数据
+      - EVCC_TARIFFS_CURRENCY=CNY
+      - EVCC_TELEMETRY=false
+    binds:
+      - /lzcapp/var/data:/data
+    healthcheck:
+      test: [CMD-SHELL, "wget -qO /dev/null http://127.0.0.1:7070 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 6
+      start_period: 180s
