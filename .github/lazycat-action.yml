@@ -29,6 +29,20 @@ images:
 
 stores:
   official:
-    enabled: false
+    enabled: true
+    application:
+      brief: "电动车充电控制"
+      description: "evcc 统一管理家用充电桩与光伏、电池、电价，按太阳能余量自动调节充电功率，用电更省。"
+      keywords:
+        - "充电桩"
+        - "光伏"
+        - "电动车"
+        - "能耗"
+        - "智能家居"
+      support_pc: true
+      screenshot_pc_files:
+        - ".github/screenshots/pc-1.png"
+        - ".github/screenshots/pc-2.png"
+        - ".github/screenshots/pc-3.png"
   private:
     enabled: false
